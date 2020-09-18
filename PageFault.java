@@ -8,6 +8,7 @@
   // Algorithm as described in the Memory Management section.
 
 import java.util.*;
+import java.util.ArrayList;
 //import Page;
 
 public class PageFault {
@@ -50,35 +51,24 @@ public class PageFault {
    * @param controlPanel represents the graphical element of the 
    *   simulator, and allows one to modify the current display.
    */
-  public static void replacePage ( Vector mem , int virtPageNum , int replacePageNum , ControlPanel controlPanel ) 
-  {
-    int count = 0;
-    int oldestPage = -1;
-    int oldestTime = 0;
-    int firstPage = -1;
-    int map_count = 0;
-    boolean mapped = false;
+  public static void replacePage (Vector mem , int virtPageNum , int replacePageNum , ControlPanel controlPanel, ArrayList<String> counter) {
+    Long minValue = 255L; // 255 es el máximo número posible con 8 bits 11111111
+    int oldestPage = -1;  //Inicializamos con -1 el index de la página más vieja
+    int i = 0; //contador del for each
 
-    while ( ! (mapped) || count != virtPageNum ) {
-      Page page = ( Page ) mem.elementAt( count );
-      if ( page.physical != -1 ) {
-        if (firstPage == -1) {
-          firstPage = count;
-        }
-        if (page.inMemTime > oldestTime) {
-          oldestTime = page.inMemTime;
-          oldestPage = count;
-          mapped = true;
-        }
-      }
-      count++;
-      if ( count == virtPageNum ) {
-        mapped = true;
-      }
-    }
-    if (oldestPage == -1) {
-      oldestPage = firstPage;
-    }
+    for (String item : counter) {
+      Long x = Long.parseLong(item, 2); //convertimos el contador de cada página en decimal
+      
+      if (x < minValue) { //verificamos si es el menos usado
+        minValue = x; // guardamos el valor como el contador más bajo
+        oldestPage = i; //guardamos el indice
+      }        
+
+      i++;
+    }    
+
+    System.out.println("Se remplazara la pagina: " + replacePageNum + " con la pagina menos usada: " + oldestPage);
+    
     Page page = ( Page ) mem.elementAt( oldestPage );
     Page nextpage = ( Page ) mem.elementAt( replacePageNum );
     controlPanel.removePhysicalPage( oldestPage );

@@ -1,6 +1,7 @@
 import java.lang.Thread;
 import java.io.*;
 import java.util.*;
+import java.util.ArrayList;
 //import Page;
 
 public class Kernel extends Thread
@@ -24,6 +25,7 @@ public class Kernel extends Thread
   public int runcycles;
   public long block = (int) Math.pow(2,12);
   public static byte addressradix = 10;
+  private ArrayList<String> counter; //Lista de los contadores de cada página
 
   public void init( String commands , String config )  
   {
@@ -50,6 +52,7 @@ public class Kernel extends Thread
     long initialSize = 0;
     long finalSize = 0;
     long address_limit = (block * virtPageNum+1)-1;
+    initCounter(); //Inicializamos la lista de contadores de las páginas
   
     if ( config != null )
     {
@@ -420,7 +423,11 @@ public class Kernel extends Thread
     Instruction instruct = ( Instruction ) instructVector.elementAt( runs );
     controlPanel.instructionValueLabel.setText( instruct.inst );
     controlPanel.addressValueLabel.setText( Long.toString( instruct.addr , addressradix ) );
-    getPage( Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) );
+    
+    int pageNumber = Virtual2Physical.pageNum( instruct.addr , virtPageNum , block);
+
+    getPage(pageNumber);
+
     if (controlPanel.pageFaultValueLabel.getText() == "YES" ) 
     {
       controlPanel.pageFaultValueLabel.setText( "NO" );
@@ -428,6 +435,9 @@ public class Kernel extends Thread
     if ( instruct.inst.startsWith( "READ" ) ) 
     {
       Page page = ( Page ) memVector.elementAt( Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) );
+
+      //método para incrementar los contadores de las páginas
+      incPageCounter(page.id);
 
       String segments = Virtual2Physical.getSegments (page.id, instruct.initialSegment, instruct.finalSegment);
       System.out.println(segments);
@@ -442,7 +452,7 @@ public class Kernel extends Thread
         {
           System.out.println( "READ " + Long.toString(instruct.addr , addressradix) + " ... page fault" );
         }
-        PageFault.replacePage( memVector , virtPageNum , Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) , controlPanel );
+        PageFault.replacePage( memVector , virtPageNum , Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) , controlPanel, counter);
         controlPanel.pageFaultValueLabel.setText( "YES" );
       } 
       else 
@@ -465,6 +475,9 @@ public class Kernel extends Thread
     {
       Page page = ( Page ) memVector.elementAt( Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) );
       
+      //método para incrementar los contadores de las páginas
+      incPageCounter(page.id);
+
       String segments = Virtual2Physical.getSegments(page.id, instruct.initialSegment, instruct.finalSegment);
       System.out.println(segments);
 
@@ -478,7 +491,8 @@ public class Kernel extends Thread
         {
            System.out.println( "WRITE " + Long.toString(instruct.addr , addressradix) + " ... page fault" );
         }
-        PageFault.replacePage( memVector , virtPageNum , Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) , controlPanel );          controlPanel.pageFaultValueLabel.setText( "YES" );
+        PageFault.replacePage( memVector , virtPageNum , Virtual2Physical.pageNum( instruct.addr , virtPageNum , block ) , controlPanel, counter);          
+        controlPanel.pageFaultValueLabel.setText( "YES" );
       } 
       else 
       {
@@ -496,6 +510,7 @@ public class Kernel extends Thread
         }
       }
     }
+
     for ( i = 0; i < virtPageNum; i++ ) 
     {
       Page page = ( Page ) memVector.elementAt( i );
@@ -532,4 +547,43 @@ public class Kernel extends Thread
     controlPanel.highValueLabel.setText( "0" ) ;
     init( command_file , config_file );
   }
+
+  private void incPageCounter(int index) {
+    int i = 0;  //inicializamos el contador de las páginas
+    String value = ""; //iniciamos un auxiliar para incrementar cada contador
+    
+    for (String item : counter) {
+      value = item; //obtenemos el contador de la página i
+
+      if (i == index) { //Si es la página que estamos usando le incrementamos un 1 al inicio 
+        value = "1" + value;
+      } else {
+        value = "0" + value; //Si no es la página que estamos usando le incrementamos un 0 al inicio 
+      }
+
+      //Acortamos el contador a los primeros 8 bits simulando el corrimiento de bits
+      value = value.substring(0, 7);
+
+      //Remplazamos el contador de la página i
+      counter.set(i, value);
+
+      i++;
+    }
+    
+  }
+
+  private void initCounter() {
+    //inicializamos los contador
+    counter = new ArrayList();
+
+    //Le ponemos a cada contador un contador de 8 bits de 0
+    //porque no se han utilizado las páginas
+    for (int i = 0; i <= 32; i++) {
+      counter.add("00000000");
+    }
+
+  }
+
+
+
 }

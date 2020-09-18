@@ -1,2 +1,3 @@
 READ 0 ... okay
 READ 4000 ... okay
+READ 1ffff ... page fault

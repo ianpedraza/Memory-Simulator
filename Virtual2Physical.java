@@ -25,12 +25,14 @@ public class Virtual2Physical
     long low = (4 * block) * virtualPage;
     long high = (4 * block) * (virtualPage + 1); 
 
+    /*
     System.out.println("low: " + low);
     System.out.println("hihg: " + high);    
     System.out.println("virtualPage: " + virtualPage);
     System.out.println("initialSection: " + initialSection);
     System.out.println("finalSection: " + finalSection);
     System.out.println("block: " + block);
+    */
 
     if ((low <= initialSection && initialSection < high) && (low <= finalSection && finalSection < high)) {
       //El segmento pertenece a esta página
